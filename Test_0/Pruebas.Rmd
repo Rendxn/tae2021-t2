@@ -1,0 +1,166 @@
+---
+title: "Pruebas"
+author: "Arley"
+date: "25/4/2021"
+output: html_document
+---
+
+```{r}
+library(scales)
+library(kableExtra)
+```
+Este trabajo requiere llevar a cabo un ejercicio de segmentación para una base de datos simulada que contiene información de clientes corporativos de una empresa cuyos clientes son empresas.
+
+La base de datos se llama “base_trabajo_segmentacion.csv” y está en la carpeta de Drive TAE a la cual tienen acceso los estudiantes del curso.
+
+El trabajo de agrupamiento debe considerar dos tipos de variables:
+
+* De comportamiento de los clientes en los diferentes canales y productos de la empresa (ver lista al final)
+
+* De estados financieros de los clientes (ver lista al final)
+
+$La\quad variable\quad nit\quad identifica\quad a\quad cada\quad cliente$
+
+Se debe proponer una segmentación que le permita a la empresa entender mejor a sus clientes, identificar patrones de uso de productos y canales y su relación con los estados financieros
+
+La segmentación y su narrativa se deben entregar en un documento (Rpubs)
+La fecha de entrega es el miércoles 11 de mayo de 2021
+Se deben conservar los mismos grupos de trabajo
+
+
+
+
+```{r setup, include=FALSE}
+datos <-read.csv('base_trabajo_segmentacion.csv',header = TRUE, sep = ";")
+```
+
+|nit | De comportamiento de los clientes canales y productos de la empresa|
+|:---|:-------------------------------------------------------------------|
+|nit |en: entrada                                                         |
+|nit |vm: valor medio anual                                               |
+|nit |tx: transacciones mensuales promedio                                |
+|nit |sal: salida                                                         |
+
+
+|De estados financieros de los clientes |
+|:------------------------------------- |
+|impo_cv: [importaciones]/[compras] categorizadas|
+|expo_vt: [exportaciones]/[ventas] categorizadas|
+|cxp: [cuentas por pagar] categorizada con seis niveles|
+|cxc: [cuentas por cobrar] categorizada con seis niveles|
+|totalinventory: [valor de inventarios] categorizada con seis niveles|
+|pagos_pj: [pagos hechos a personas jurídicas]/[pagos totales]|
+|pagos_pn: [pagos hechos a personas naturales]/[pagos totales]|
+|tiene_ventas_fisicas: la empresa tiene puntos de venta físicos (1:Si, 0:No)|
+|tiene_ventas_electronicas: la empresa tiene ventas electrónicas (1:Si, 0:No)|
+|recaudos_pj: [recaudos provenientes de personas jurídicas]/[recaudos totales]|
+|recaudos_pn: [recaudos provenientes de personas naturales]/[recaudos totales]|
+|rotacion_inventarios: [rotación de inventarios en días] categorizada con seis nivel|
+|rotacion_cxc: [rotación de cuentas por pagar en días] categorizada con seis niveles
+|rotacion_cxp: [rotación de cuentas por cobrar en días] categorizada con seis nivele|
+|ciclo_negocio: [ciclo de negocio en días] categorizada con seis niveles    |
+|ciclo_financiero: [ciclo financiero en días] categorizada con seis niveles|
+
+```{r}
+datos_num <- datos[,c(2:31)]
+datos_cat<- datos[,c(32:47)]
+```
+```{r}
+datos_num_scaled <- scale(datos_num,center = TRUE, scale = TRUE)
+```
+```{r}
+D_cat <- dist(datos_cat,method="binary",diag=TRUE)
+D_num <- dist(datos_num_scaled,diag=TRUE)
+```
+
+
+```{r}
+image(t(as.matrix(D_cat)[,2233:1]), main="Distancias según las variables binarias")
+```
+```{r}
+image(t(as.matrix(D_num)[,2233:1]), main="Distancias según las variables numéricas")
+```
+```{r}
+D_Tot <- D_cat + D_num
+```
+
+```{r}
+image(t(as.matrix(D_Tot)[,2233:1]), main="Distancias totales")
+```
+```{r}
+cluster_jerar <- hclust(D_Tot,method = "ward.D2") #mejores resultados con ward.D y ward.D2
+```
+```{r}
+plot(cluster_jerar)
+```
+```{r}
+etiqueta_grupo<- cutree(cluster_jerar,k=6)
+```
+
+```{r}
+table(etiqueta_grupo)
+```
+```{r}
+kable(summary(datos[etiqueta_grupo==6,]))
+```
+```{r}
+grupo6<-datos[etiqueta_grupo==6,]
+
+```
+
+
+```{r}
+set.seed(1234)
+wcss <- vector()
+for(i in 1:30){
+  wcss[i] <- sum(kmeans(D_Tot, i)$withinss)
+}
+```
+
+```{r}
+plot(wcss)
+```
+```{r}
+set.seed(1234)
+wcss_20 <- vector()
+for(i in 1:20){
+  wcss[i] <- sum(kmeans(D_cat, i)$withinss)
+}
+```
+
+
+```{r}
+cluster_jerar_num <- hclust(D_num,method = "complete")
+```
+```{r}
+plot(cluster_jerar_num)
+```
+```{r}
+set.seed(1234)
+wcss_num <- vector()
+for(i in 1:10){
+  wcss[i] <- sum(kmeans(D_num, i)$withinss)
+}
+```
+
+
+
+
+
+```{r}
+cluster_jerar_num <- hclust(D_num,method = "complete")
+```
+```{r}
+plot(cluster_jerar_num )
+```
+```{r}
+etiqueta_grupo <- cutree(cluster_jerar,k=5)
+```
+```{r}
+plot(etiqueta_grupo )
+```
+
+
+
+
+
