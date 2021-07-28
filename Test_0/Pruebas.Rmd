@@ -8,6 +8,9 @@ output: html_document
 ```{r}
 library(scales)
 library(kableExtra)
+
+library(ggplot2)
+
 ```
 Este trabajo requiere llevar a cabo un ejercicio de segmentación para una base de datos simulada que contiene información de clientes corporativos de una empresa cuyos clientes son empresas.
 
@@ -32,6 +35,7 @@ Se deben conservar los mismos grupos de trabajo
 
 ```{r setup, include=FALSE}
 datos <-read.csv('base_trabajo_segmentacion.csv',header = TRUE, sep = ";")
+
 ```
 
 |nit | De comportamiento de los clientes canales y productos de la empresa|
@@ -88,59 +92,165 @@ D_Tot <- D_cat + D_num
 image(t(as.matrix(D_Tot)[,2233:1]), main="Distancias totales")
 ```
 ```{r}
-cluster_jerar <- hclust(D_Tot,method = "ward.D2") #mejores resultados con ward.D y ward.D2
+cluster_jerar <- hclust(D_Tot,method = "ward.D") #mejores resultados con ward.D y ward.D2
 ```
 ```{r}
 plot(cluster_jerar)
 ```
+Con el fin de identificar las caracteristicas de los grupos "padre" se toman los dos grupos y con el calculo de la media se identifica la diferencia entre los 2 grupos 
 ```{r}
-etiqueta_grupo<- cutree(cluster_jerar,k=6)
+etiqueta_grupo<- cutree(cluster_jerar,k=2)
 ```
-
+Se puede ver que el grupo 1 cuenta con aproximadamente el 80% de los datos
 ```{r}
 table(etiqueta_grupo)
 ```
-```{r}
-kable(summary(datos[etiqueta_grupo==6,]))
-```
-```{r}
-grupo6<-datos[etiqueta_grupo==6,]
+Dado que la cantidad de variables es extensa el analisis y la identificacion de las diferencias entre grupos se torna compleja, de esta manera se toma la media de cada variable para cada grupo, de esta se puede ver que las caracteristicas son dominadas porla cantidad de recursos tramitados por cada canal.
 
+```{r}
+kable(summary(datos[etiqueta_grupo==1,])[3,])
+```
+
+
+```{r}
+grupo1<-datos[etiqueta_grupo==1,]
+```
+
+```{r}
+
+means_num<- aggregate(cbind(en_vm_canal1,en_vm_canal2 ,en_vm_canal3, en_vm_canal4,en_vm_canal5,en_vm_canal6,en_vm_canal7,en_vm_canal8,en_vm_canal9,en_vm_canal10,en_vm_otros,en_tx_canal1, en_tx_canal2,en_tx_canal3,en_tx_canal4,en_tx_canal5 , en_tx_canal6,en_tx_canal7,en_tx_canal8,en_tx_canal9,en_tx_canal10,en_tx_otros,sal_vm_canal5,sal_vm_canal2, sal_vm_canal8,sal_vm_otros,sal_tx_canal5,sal_tx_canal2,sal_tx_canal8,sal_tx_otros)~etiqueta_grupo,data=datos,FUN=sd)
+#aggregate(cbind(u[2],u[3])~etiqueta_grupo,data=datos,FUN=sd)
+
+```
+
+
+```{r}
+medias_grupo_1_2_num<-data.frame(t(means_num[-1]))
+colnames(medias_grupo_1_2_num) <- c('grupo1','grupo2')
+```
+
+```{r}
+names=c(names(means_num))
+barplot(t(as.matrix(medias_grupo_1_2_num)),names.arg=names[2:31],las=2,cex.axis=0.8,cex.names=0.6, col=c('orange','blue'), legend =c('Grupo 1','Grupo 2'),beside=TRUE)
+```
+## categoricas
+
+```{r,echo=FALSE}
+means_cat<- aggregate(cbind(impo_cv,expo_vt,cxp,cxc,totalinventory,pagos_pj,pagos_pn,tiene_ventas_fisicas,tiene_ventas_electronicas,recaudos_pj  , recaudos_pn ,rotacion_inventarios,rotacion_cxc,rotacion_cxp , ciclo_negocio,ciclo_financiero)~etiqueta_grupo,data=datos,FUN=sd)
+```
+
+```{r}
+medias_grupo_1_2_cat<-data.frame(t(means_cat[-1]))
+colnames(medias_grupo_1_2_cat) <- c('grupo1','grupo2')
+```
+
+```{r}
+names=c(names(means_cat))
+barplot(t(as.matrix(medias_grupo_1_2_cat)),names.arg=names[2:17],las=2,cex.axis=0.8,cex.names=0.6, col=c('orange','blue'),legend=c('Grupo 1','Grupo 2'),beside=TRUE)
+
+```
+
+## tres grupos
+```{r}
+etiqueta_grupoII<- cutree(cluster_jerar,k=3)
+```
+
+```{r,echo=FALSE}
+meansII<- aggregate(cbind(en_vm_canal1,en_vm_canal2 ,en_vm_canal3, en_vm_canal4,en_vm_canal5,en_vm_canal6,en_vm_canal7,en_vm_canal8,en_vm_canal9,en_vm_canal10,en_vm_otros,en_tx_canal1, en_tx_canal2,en_tx_canal3,en_tx_canal4,en_tx_canal5 , en_tx_canal6,en_tx_canal7,en_tx_canal8,en_tx_canal9,en_tx_canal10,en_tx_otros,sal_vm_canal5,sal_vm_canal2, sal_vm_canal8,sal_vm_otros,sal_tx_canal5,sal_tx_canal2,sal_tx_canal8,sal_tx_otros)~etiqueta_grupoII,data=datos,FUN=sd)
+```
+
+```{r}
+medias_grupo_1_2_3<-data.frame(t(meansII[-1]))
+colnames(medias_grupo_1_2_3) <- c('grupo1','grupo2','grupo3')
+```
+
+```{r}
+namesII=c(names(meansII))
+barplot(t(as.matrix(medias_grupo_1_2_3)),names.arg=namesII[2:31],las=2,cex.axis=0.8,cex.names=0.6, col=c('orange','blue','red'), legend =c('Grupo 1','Grupo 2','Grupo 3'),beside=TRUE)
+```
+```{r,echo=FALSE}
+means_cat_3<- aggregate(cbind(impo_cv,expo_vt,cxp,cxc,totalinventory,pagos_pj,pagos_pn,tiene_ventas_fisicas,tiene_ventas_electronicas,recaudos_pj  , recaudos_pn ,rotacion_inventarios,rotacion_cxc,rotacion_cxp , ciclo_negocio,ciclo_financiero)~etiqueta_grupoII,data=datos,FUN=sd)
+```
+
+```{r}
+medias_grupo_3_cat<-data.frame(t(means_cat_3[-1]))
+colnames(medias_grupo_3_cat) <- c('grupo1','grupo2','grupo3')
+```
+
+```{r}
+names=c(names(means_cat_3))
+barplot(t(as.matrix(medias_grupo_3_cat)),names.arg=names[2:17],las=2,cex.axis=0.8,cex.names=0.6, col=c('orange','blue','red'),legend=c('Grupo 1','Grupo 2','Grupo3'),beside=TRUE)
+
+```
+
+## siete grupos
+```{r}
+etiqueta_grupoVII<- cutree(cluster_jerar,k=7)
+```
+
+```{r,echo=FALSE}
+meansVII<- aggregate(cbind(impo_cv,expo_vt,cxp,cxc,totalinventory,pagos_pj,pagos_pn,tiene_ventas_fisicas,tiene_ventas_electronicas,recaudos_pj  , recaudos_pn ,rotacion_inventarios,rotacion_cxc,rotacion_cxp , ciclo_negocio,ciclo_financiero)~etiqueta_grupoVII,data=datos,FUN=sd)
+```
+
+```{r}
+medias_grupo_7<-data.frame(t(meansVII[-1]))
+colnames(medias_grupo_7) <- c('grupo1','grupo2','grupo3','grupo4','grupo5','grupo6','grupo7')
+```
+
+```{r}
+namesVII=c(names(meansVII))
+barplot(t(as.matrix(medias_grupo_7)),names.arg=namesVII[2:17],las=2,cex.axis=0.8,cex.names=0.6, col=c('orange','blue','red','blue','green','yellow','purple'), legend =c('Grupo 1','Grupo 2','Grupo 3','Grupo 4','Grupo 5','Grupo 6','Grupo 7'),beside=TRUE)
+```
+
+## categoricas 
+```{r,echo=FALSE}
+meansVII_Cat<- aggregate(cbind(impo_cv,expo_vt,cxp,cxc,totalinventory,pagos_pj,pagos_pn,tiene_ventas_fisicas,tiene_ventas_electronicas,recaudos_pj  , recaudos_pn ,rotacion_inventarios,rotacion_cxc,rotacion_cxp , ciclo_negocio,ciclo_financiero)~etiqueta_grupoVII,data=datos,FUN=sd)
+```
+
+```{r}
+medias_grupo_7_Cat<-data.frame(t(meansVII_Cat[-1]))
+colnames(medias_grupo_7_Cat) <- c('grupo1','grupo2','grupo3','grupo4','grupo5','grupo6','grupo7')
+```
+
+```{r}
+namesVII_Cat=c(names(meansVII_Cat))
+barplot(t(as.matrix(medias_grupo_7_Cat)),names.arg=namesVII_Cat[2:17],las=2,cex.axis=0.8,cex.names=0.6, col=c('orange','blue','red','blue','green','yellow','purple'),legend =c('Grupo 1','Grupo 2','Grupo 3','Grupo 4','Grupo 5','Grupo 6','Grupo 7'),beside=TRUE)
 ```
 
 
 ```{r}
 set.seed(1234)
 wcss <- vector()
-for(i in 1:30){
+for(i in 1:20){
   wcss[i] <- sum(kmeans(D_Tot, i)$withinss)
 }
 ```
 
 ```{r}
+
 plot(wcss)
 ```
 ```{r}
-set.seed(1234)
-wcss_20 <- vector()
-for(i in 1:20){
-  wcss[i] <- sum(kmeans(D_cat, i)$withinss)
-}
+# set.seed(1234)
+# wcss_20 <- vector()
+# for(i in 1:20){
+#   wcss[i] <- sum(kmeans(D_cat, i)$withinss)
+# }
 ```
 
 
 ```{r}
-cluster_jerar_num <- hclust(D_num,method = "complete")
+#cluster_jerar_num <- hclust(D_num,method = "complete")
 ```
 ```{r}
-plot(cluster_jerar_num)
+#plot(cluster_jerar_num)
 ```
 ```{r}
-set.seed(1234)
-wcss_num <- vector()
-for(i in 1:10){
-  wcss[i] <- sum(kmeans(D_num, i)$withinss)
-}
+# set.seed(1234)
+# wcss_num <- vector()
+# for(i in 1:10){
+#   wcss[i] <- sum(kmeans(D_num, i)$withinss)
+# }
 ```
 
 
@@ -148,16 +258,16 @@ for(i in 1:10){
 
 
 ```{r}
-cluster_jerar_num <- hclust(D_num,method = "complete")
+#cluster_jerar_num <- hclust(D_num,method = "complete")
 ```
 ```{r}
-plot(cluster_jerar_num )
+#plot(cluster_jerar_num )
 ```
 ```{r}
-etiqueta_grupo <- cutree(cluster_jerar,k=5)
+#etiqueta_grupo <- cutree(cluster_jerar,k=5)
 ```
 ```{r}
-plot(etiqueta_grupo )
+#plot(etiqueta_grupo )
 ```
 
 
