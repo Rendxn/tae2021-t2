@@ -1,0 +1,39 @@
+---
+title: "Preprocesamiento"
+author: "Sebastian"
+date: "1/8/2021"
+output: html_document
+---
+
+# Segmentación de clientes | TAE 2021-1
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(scales)
+library(kableExtra)
+library(ggplot2)
+```
+
+```{r, child=c('analisisDescriptivo.Rmd')}
+# Aquí iría el análisis descriptivo inicial de las variables que se tienen
+```
+
+```{r, child=c('preprocesamiento.Rmd')}
+# Aquí iría el preprocesamiento realizado a los datos que se usarán en los modelos
+```
+
+```{r, child=c('acp.Rmd')}
+# TODO
+# Aquí iría el análisis de componentes principales
+```
+
+```{r, child=c('kmeans.Rmd')}
+# Aquí iría el desarrollo del modelo K Means, elección de K con gráfica del codo y un análisis de los clústeres encontrados
+```
+
+```{r, child=c('jerarquico.Rmd')}
+# Aquí iría el desarrollo del modelo jerárquico y un análisis de los clústeres encontrados
+```
