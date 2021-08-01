@@ -62,6 +62,16 @@ datos_num <- datos[,c(2:31)]
 datos_cat<- datos[,c(32:47)]
 ```
 
+```{r}
+base_num_log = log(datos_num)
+```
+
+```{r}
+pca<- prcomp(datos_num , scale = TRUE)
+```
+
+
+
 # Identificación de canales transacciones mensuales promedio
  
 ```{r, echo = FALSE }
@@ -76,6 +86,10 @@ canales_entrada_salida_vm<-datos_num %>% select(matches("._vm_."))
 #  salida                         
 
 ```
+
+
+
+
 
 ```{r, echo = FALSE }
 kbl(summary(canales_entrada_salida_tx[,c(1:5)])) %>% kable_styling()
@@ -98,7 +112,8 @@ Se muestran diagramas de barras para cada media de las variables en los canales 
 medias_num_tx<- colMeans(canales_entrada_salida_tx[sapply(canales_entrada_salida_tx, is.numeric)])
 barplot(medias_num_tx,las=2,cex.axis=0.8,cex.names=0.6, main = "Medias de canales entrada y salida para transacciones mensuales promedio")
 ```
-## Identificación de canales valor medio anual
+
+# Identificación de canales valor medio anual
 
 ```{r, echo = FALSE }
 kbl(summary(canales_entrada_salida_vm[,c(1:5)])) %>% kable_styling()
@@ -140,24 +155,68 @@ D_Tot <- D_cat + D_num
 
 ```
 
-## Realizamos agrupamiento jerarquico para identificar los grupos 
+# Realizamos agrupamiento jerarquico para identificar los grupos 
 
-Metodo de ward Método de Ward (método de mínima varianza): Cuando se unen dos conglomerados,
-con independencia del método utilizado, la varianza aumenta. El método de Ward une los
-casos buscando minimizar la varianza dentro de cada grupo. Para ello se calcula, en primer
-lugar, la media de todas las variables en cada conglomerado. A continuación, se calcula la
-distancia entre cada caso y la media del conglomerado, sumando después las distancias
-entre todos los casos. Posteriormente se agrupan los conglomerados que generan menos
-aumentos en la suma de las distancias dentro de cada conglomerado. Este procedimiento
-crea grupos homogéneos y con tamaños similares.
+## ¿Qué metodo debemos usar para el agrupamiento?
 
-tomado de \[https://www.estadistica.net/Master-Econometria/Analisis_Cluster.pdf](Enlace metodo de ward pag 24 )
+Se usa medida de distancia cofonetica encargada de calcular la distancia entre las 2 ramas principales de los cluster segun cada metodo y por metodo del cenrtoide buscamos el que tenga mayor correlacion entre la matriz de ditancias 
+
+
+tomado de \href[https://rpubs.com/lhromeroj/analisisdeclusterR](Busqueda del mejor metodo )
+
 
 ```{r}
-cluster_jerar <- hclust(D_Tot,method = "ward.D") #mejores resultados con ward.D y ward.D2
+
+hc_euclidea_complete <- hclust(d = D_Tot, method = "complete")
+hc_euclidea_average  <- hclust(d = D_Tot , method = "average")
+hc_euclidea_single  <- hclust(d = D_Tot , method = "single")
+hc_euclidea_ward.D2  <- hclust(d = D_Tot , method = "ward.D2")
+hc_euclidea_median  <- hclust(d = D_Tot , method = "median")
+hc_euclidea_centroid  <- hclust(d =D_Tot , method = "centroid")
+hc_euclidea_mcquitty  <- hclust(d =D_Tot , method = "mcquitty")
+
+```
+
+```{r}
+cor(x = D_Tot, cophenetic(hc_euclidea_complete))
+```
+```{r}
+cor(x = D_Tot, cophenetic(hc_euclidea_average))
+```
+```{r}
+cor(x = D_Tot, cophenetic(hc_euclidea_single))
+```
+
+```{r}
+cor(x = D_Tot, cophenetic(hc_euclidea_ward.D2))
+```
+
+```{r}
+cor(x = D_Tot, cophenetic(hc_euclidea_median))
+```
+
+```{r}
+cor(x = D_Tot, cophenetic(hc_euclidea_centroid)) ## Tiene la mayor correlación
+```
+
+```{r}
+cor(x = D_Tot, cophenetic(hc_euclidea_mcquitty))
+```
+
+Se puede ver que el mejor metodo es euclidea average el cual toma el promedio de las distancias entre 2 puntos de diferentes grupos 
+
+```{r}
+cluster_jerar <- hclust(D_Tot,method = "ward.D2") #mejores resultados con ward.D y ward.D2
 hcd <- as.dendrogram(cluster_jerar)
+#plot(cut(hcd, h = 40)$upper, main = "Upper tree of cut at h=75",leaflab = "none")
 plot(hcd, cex = 0.6, leaflab = "none",main = "Dendrograma de agrupamiento")
 ```
+
+## ¿Qué cantidad de rgupos debemos generar en el agrupamiento?
+
+
+
+
 
 Veamos cuales serian los primeros 5 grupos 
 
