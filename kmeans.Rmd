@@ -1,0 +1,235 @@
+---
+title: "kmeans"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, tidy = TRUE)
+```
+
+## Introducción
+
+K-Means es un método de aprendizaje no supervisado usado para encontrar grupos
+en las observaciones (clusters o grupos). Usaremos un dataset que contiene los
+clientes de una empresa, donde los clientes también son empresas.
+
+## Cargando los Datos
+
+Importamos algunas librerías necesarias para el agrupamiento y cargamos los
+datos.
+
+
+```{r lib-import, results=FALSE, message=FALSE}
+# Carga de librerías
+library(tidyverse)
+library(corrplot)
+library(plotly)
+library(gridExtra)
+library(GGally)
+library(knitr)
+library(NbClust)
+library(cluster)
+library(factoextra)
+library(LICORS)
+```
+
+```{r data-loading, results=FALSE, message=FALSE}
+# Set random seed
+set.seed(20210803)
+
+# Carga de datos
+df_full <- read.csv("./data/base_trabajo_segmentacion.csv", header = TRUE, sep = ";")
+head(df_full)
+```
+
+## Gráficos Exploratorios
+
+```{r}
+# Histograma para cada en_vm
+df_full %>%
+  gather(caracteristica, valor, 2:13) %>%
+  ggplot(aes(x=valor, fill=caracteristica)) +
+  geom_histogram(colour="black", show.legend=FALSE, bins=10) +
+  facet_wrap(~caracteristica, scales="free_x") +
+  labs(x="Valor", y="Frequencia",
+       title="Caracteristicas de cliente - Histogramas") +
+  theme_bw()
+```
+
+
+## Escalado de datos
+
+```{r scale}
+nit_list <- df_full$nit
+df <- select(df_full, -nit) %>% scale %>% as.data.frame
+# rownames(df) <- nit_list
+# Aparentemente hay NITs repetidos e.g. C-183565186626737291
+```
+
+## Análisis de Componentes Principales
+
+El análisis de componentes principales (PCA en inglés), permite identificar
+cuáles componentes o variables son las que más afectan la variancia de los
+datos. Por lo que si conocemos los componentes con mayor influencia en la
+variancia, podemos estimar la "posición" de una muestra comparada con otras
+muestras.
+
+```{r customers-pca}
+df.pca <- princomp(df, cor = TRUE)
+summary(df.pca)
+# TODO: Deberíamos usar solo los componentes que tenga una varianza de 1% +?
+# i.e. PC1:PC25
+```
+
+En nuestro caso, para obtener al menos una representación de la varianza de
+80%, tenemos que usar al menos 17 componentes principales.
+
+Aunque multiples componentes influyan en menos de 1% de la varianza, usaremos
+los datos completos, ya que no hay componentes que influyan contundentemente en
+la varianza y el costo computacional con 46 variables es aceptable.
+
+## ¿Cuántos Grupos?
+
+Veamos gráficamente cuál es el número de grupos óptimo, usando la prueba del
+codo.
+
+```{r elbow-test}
+fviz_nbclust(df, kmeans, method = "wss")
+fviz_nbclust(df, kmeans, method = "silhouette")
+fviz_nbclust(df, kmeans, method = "gap_stat")
+```
+
+Con estos tres métodos obtenemos resultados distintos, pero se puede ver una
+preferencia por 2 y 3 grupos Aun así, usaremos una función del paquete `NbClust`
+que permite calcular más métricas simultanéamente para encontrar el número de
+grupos adecuado.
+
+```{r num-clust, cache=TRUE}
+num_clust <-  NbClust(df, distance="euclidean", method = "kmeans", min.nc = 2, max.nc = 10, index = "all")
+```
+
+Los índices indican entre 2 y 3 grupos, pero ligeramente favoreciendo el uso de
+**3 grupos**:
+
+```{r num-clust-graph}
+fviz_nbclust(num_clust)
+```
+
+
+## Ejecución de K-Means
+
+```{r k3-means-exec}
+customers_k3 <- kmeans(df, centers = 3, nstart = 50)
+```
+
+El número de observaciones en cada grupo es $5$, $1184$ y $1044$:
+
+```{r k-means-sizes}
+customers_k3$size
+```
+
+Debido a la disparidad del tamaño de los grupos, usaremos dos grupos.
+
+```{r k2-means-exec}
+customers_k2 <- kmeans(df, centers = 2, nstart = 50)
+customers_k2$size
+```
+
+Usando K-Means++, un algoritmo para seleccionar los valores iniciales, centros o
+semillas de los grupos.
+
+```{r}
+customers_k2pp <- kmeanspp(df, k = 3, start = "random", iter.max = 100, nstart = 50)
+customers_k2pp$size
+```
+
+```{r distributions}
+# Usaremos `customers_k3`, por la distribución de los clusters.
+# TODO: Determinar cuál usar.
+# TODO: Formato de output con Kable o similar
+
+aggregate(df, by=list(customers_k3$cluster), mean)
+```
+
+## Visualización de Distribución de Variables
+
+Veamos esta distribución gráficamente.
+
+```{r clustering-graphs-en-vm}
+# TODO: Tal vez graficar entradas vs salidas
+ggpairs(cbind(df, Cluster=as.factor(customers_k3$cluster)),
+        columns=1:11, aes(colour=Cluster, alpha=0.5),
+        lower=list(continuous="points"),
+        upper=list(continuous="blank"),
+        axisLabels="none", switch="both") +
+        theme_bw()
+```
+
+```{r clustering-graphs-en-tx}
+ggpairs(cbind(df, Cluster=as.factor(customers_k3$cluster)),
+        columns=12:22, aes(colour=Cluster, alpha=0.5),
+        lower=list(continuous="points"),
+        upper=list(continuous="blank"),
+        axisLabels="none", switch="both") +
+        theme_bw()
+```
+
+```{r clustering-graphs-sal-vm}
+ggpairs(cbind(df, Cluster=as.factor(customers_k3$cluster)),
+        columns=23:26, aes(colour=Cluster, alpha=0.5),
+        lower=list(continuous="points"),
+        upper=list(continuous="blank"),
+        axisLabels="none", switch="both") +
+        theme_bw()
+```
+
+```{r clustering-graphs-sal-tx}
+ggpairs(cbind(df, Cluster=as.factor(customers_k3$cluster)),
+        columns=27:30, aes(colour=Cluster, alpha=0.5),
+        lower=list(continuous="points"),
+        upper=list(continuous="blank"),
+        axisLabels="none", switch="both") +
+        theme_bw()
+```
+
+## Cluster en la Base de Datos
+
+Para poder eventualmente manipular los datos y aplicar otras técnicas teniendo
+en cuenta el grupo, añadimos el grupo al que pertenece en una nueva columna.
+
+```{r}
+labeled_grouped_df <- df %>% mutate(Cluster = customers_k3$cluster) %>%
+      group_by(Cluster) %>% 
+      summarise_all("mean")
+
+labeled_df <- df_full %>% mutate(Cluster = as.factor(customers_k3$cluster), .after = nit)
+labeled_pca <-data.frame(df.pca$scores, cluster = as.factor(customers_k3$cluster), cluster_name = paste("Cluster", as.factor(customers_k3$cluster)))
+```
+
+## Visualización de Clusters
+
+Para hacer un gráfico de los clusters, usamos los dos componentes principales
+con mayor proporción de la variancia.
+
+```{r fviz-cluster}
+fviz_cluster(customers_k3, data = df)
+```
+
+### Visualización 3D
+
+
+```{r}
+fig <- plot_ly(labeled_pca, x = ~Comp.1, y = ~Comp.2, z = ~Comp.3, 
+               text = rownames(labeled_pca), color = ~cluster_name) %>% 
+                add_markers(size=1.5)
+fig <- layout(fig, title="PCA Clusters de K-Means con K=3")
+fig
+```
+
+
+
+
+
+
+
+
