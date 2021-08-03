@@ -62,8 +62,8 @@ df_full %>%
 ```{r scale}
 nit_list <- df_full$nit
 df <- select(df_full, -nit) %>% scale %>% as.data.frame
-# rownames(df) <- nit_list
-# Aparentemente hay NITs repetidos e.g. C-183565186626737291
+# TODO: rownames(df) <- nit_list
+# Per aparentemente hay NITs repetidos e.g. C-183565186626737291
 ```
 
 ## Análisis de Componentes Principales
@@ -78,6 +78,7 @@ muestras.
 df.pca <- princomp(df, cor = TRUE)
 summary(df.pca)
 # TODO: Deberíamos usar solo los componentes que tenga una varianza de 1% +?
+# TODO: Organizar estilos de tablas.
 # i.e. PC1:PC25
 ```
 
@@ -94,6 +95,7 @@ Veamos gráficamente cuál es el número de grupos óptimo, usando la prueba del
 codo.
 
 ```{r elbow-test}
+# Elbow-test con diferentes métricas.
 fviz_nbclust(df, kmeans, method = "wss")
 fviz_nbclust(df, kmeans, method = "silhouette")
 fviz_nbclust(df, kmeans, method = "gap_stat")
@@ -105,6 +107,7 @@ que permite calcular más métricas simultanéamente para encontrar el número d
 grupos adecuado.
 
 ```{r num-clust, cache=TRUE}
+# Elbow test con aun más métricas.
 num_clust <-  NbClust(df, distance="euclidean", method = "kmeans", min.nc = 2, max.nc = 10, index = "all")
 ```
 
@@ -112,6 +115,7 @@ Los índices indican entre 2 y 3 grupos, pero ligeramente favoreciendo el uso de
 **3 grupos**:
 
 ```{r num-clust-graph}
+# Histograma de frecuencias de número de clusters sugerido por cada métrica
 fviz_nbclust(num_clust)
 ```
 
@@ -119,18 +123,21 @@ fviz_nbclust(num_clust)
 ## Ejecución de K-Means
 
 ```{r k3-means-exec}
+# K-Means con 3 centros y 50 configuraciones iniciales aleatorias.
+# Al final, usa la mejor configuración.
 customers_k3 <- kmeans(df, centers = 3, nstart = 50)
 ```
 
-El número de observaciones en cada grupo es $5$, $1184$ y $1044$:
-
 ```{r k-means-sizes}
+# Tamaños de los clusters
 customers_k3$size
 ```
 
 Debido a la disparidad del tamaño de los grupos, usaremos dos grupos.
 
 ```{r k2-means-exec}
+# KMeans con 2 centros y 50 configuraciones iniciales aleatorias.
+# TODO: Verificar cuál de los tres (k3, k2 y k2pp) es mejor...
 customers_k2 <- kmeans(df, centers = 2, nstart = 50)
 customers_k2$size
 ```
@@ -145,7 +152,6 @@ customers_k2pp$size
 
 ```{r distributions}
 # Usaremos `customers_k3`, por la distribución de los clusters.
-# TODO: Determinar cuál usar.
 # TODO: Formato de output con Kable o similar
 
 aggregate(df, by=list(customers_k3$cluster), mean)
