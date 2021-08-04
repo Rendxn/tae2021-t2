@@ -1,7 +1,7 @@
 ---
 title: "Segmentación de Clientes | TAE 2021-1"
-author: "Sebastian Rendón"
-date: "1/8/2021"
+author: "Santiago Rendón, Sebastián Rendón, Iván Santiago Rojas, Arley Smith"
+date: "3/8/2021"
 output: rmdformats::downcute
 bibliography: bibliography.bib
 nocite: | 
@@ -10,7 +10,7 @@ csl: ieee.csl
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, message = FALSE, tidy = TRUE)
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, tidy = TRUE, warning = FALSE)
 ```
 
 ```{r}

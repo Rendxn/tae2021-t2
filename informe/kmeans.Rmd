@@ -42,7 +42,7 @@ df_full <- read.csv("../data/base_trabajo_segmentacion.csv", header = TRUE, sep 
 ## Exploración de datos
 
 ```{r}
-head(df_full)
+kable(head(df_full))
 ```
 
 Se realiza un histograma de frecuencias para cada una de las variables 
@@ -81,9 +81,19 @@ datos. Por lo que si conocemos los componentes con mayor influencia en la
 variancia, podemos estimar la "posición" de una muestra comparada con otras
 muestras.
 
+```{r, echo = FALSE, message=FALSE}
+pca_importance <- function(x) {
+  vars <- x$sdev^2
+  vars <- vars/sum(vars)
+  rbind(`Standard deviation` = x$sdev, `Proportion of Variance` = vars, 
+      `Cumulative Proportion` = cumsum(vars))
+}
+```
+
+
 ```{r customers-pca}
 df.pca <- princomp(df, cor = TRUE)
-summary(df.pca)
+kable(pca_importance(summary(df.pca)))
 ```
 
 En nuestro caso, para obtener al menos una representación de la varianza de
