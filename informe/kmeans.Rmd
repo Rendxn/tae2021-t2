@@ -258,7 +258,7 @@ fviz_cluster(customers_k3, data = df)
 
 ```{r}
 fig <- plot_ly(labeled_pca, x = ~Comp.1, y = ~Comp.2, z = ~Comp.3, 
-               text = rownames(labeled_pca), color = ~cluster_name) %>% 
+               text = nit_list, color = ~cluster_name) %>% 
                 add_markers(size=1.5)
 fig <- layout(fig, title="PCA Clusters de K-Means con K=3")
 fig
