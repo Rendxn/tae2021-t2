@@ -1,9 +1,12 @@
 ---
 title: "Agrupamiento Jerarquico"
-author: "Arley"
+author: "Arley Smith"
 date: "25/4/2021"
 output: html_document
 ---
+
+# Agrupamiento Jerárquico
+
 
 ```{r,echo=FALSE, warning=FALSE, message = FALSE}
 library(scales)
@@ -29,8 +32,8 @@ library(ggplot2)
 
 
 
-```{r setup, include=FALSE}
-datos <-read.csv('base_trabajo_segmentacion.csv',header = TRUE, sep = ";")
+```{r, include=FALSE}
+datos <-read.csv('../data/base_trabajo_segmentacion.csv', header = TRUE, sep = ";")
 ```
 
 ```{r,echo=FALSE}
@@ -126,7 +129,7 @@ D_num <- dist(datos_num_scaled,diag=TRUE)
 D_Tot <- D_cat + D_num
 ```
 
-# Realizamos agrupamiento jerárquico para identificar los grupos 
+## Realizamos agrupamiento jerárquico para identificar los grupos 
 
 ### ¿Qué método debemos usar para el agrupamiento?
 
@@ -145,7 +148,9 @@ El método del agrupamiento “hclust” permite especificar la medida de las di
 
 El criterio de selección del método será el método que mejor clasifique el conjunto de datos buscando una distribución proporcional entre la cantidad de elementos de cada conjunto. Para esto, ejecutaremos el agrupamiento para k= 10 (10 grupos) y verificaremos la distribución de las muestras en cada grupo 
 
-tomado de [metodos hclust]( https://uc-r.github.io/hc_clustering)
+Adaptado de [@Boehmke]
+
+
 
 ```{r}
 hc_euclidea_complete <- hclust(d = D_Tot, method = "complete")
@@ -177,7 +182,7 @@ kbl(cbind(grupos_complete,grupos_average,
 
 Como se puede ver, el método que mejor distribuye la muestra es el método de Ward, una de las posibles razones por las cuales este método distribuye mejor es debido a que la muestra puede tener datos atípicos en alguna de las variables sin embargo, el eliminar o cambiar este tipo de datos puede resultar perjudicial para el agrupamiento, por otro lado tomar un método como average, complete, o single puede llevar a la necesidad de crear muchos grupos dado que cada grupo tiene una muestra única y singular. 
 
-[metodo de ward ](http://repositorio.lamolina.edu.pe/bitstream/handle/UNALM/3384/dongo-roman-andie-bryan.pdf?sequence=1&isAllowed=y)
+[@Murtagh2011]
 
 ```{r}
 cluster_jerar <- hclust(D_Tot,method = "ward.D") 
@@ -203,7 +208,7 @@ rect.hclust(cluster_jerar, k = 5, border = 1:5)
 
 Dado que la cantidad de variables es extensa el análisis y la identificación de las diferencias entre grupos se torna complejo, de esta manera se toma la media de cada variable para cada grupo.
 
-# Análisis de los 5 grupos respecto a sus medias 
+## Análisis de los 5 grupos respecto a sus medias 
 
 ### ¿Como quedaron distribuidos los grupos?
 
@@ -458,24 +463,20 @@ Rotación de cxc y cxp
 La rotación de este tipo de cuentas es un factor importante para la predicción de cuentas totales, indican el cambio de los ingresos y gastos generados, de esta forma una baja rotación en las cuentas por cobrar respecto a las cuentas por pagar sugiere que los gastos deben ser deudas a amplios plazos y que los ingresos generados están tardando en llegar respecto a los pagos de las cuentas por pagar. Este es el caso del grupo número 2.
 
 
-tomado de [cxc y cxp3](https://repositorio.sena.edu.co/handle/11404/3163)
+Adaptado de [@Sierra1985].
 
 ### Promedio total inventario y rotación de inventarios 
 
 La rotación de inventario es importante para las empresas pues indica que tanto se están vendiendo los productos o servicios ofrecidos respecto al total de la producción, una rotación de inventario baja puede afectar las empresas generando gastos de almacenamiento o perdida del valor de la mercancía.
 En este caso el grupo numero 3 es quien mayor flujo de inventario tiene en promedio y en comparación con los demás grupos, puede indicar que las empresas de este grupo realizan ventas de forma más frecuente que los demás grupos. Por otro lado, el grupo numero 1 muestra un promedio mayor en la rotación del inventario que en el promedio del total del inventario, de esta forma las empresas del grupo 1 son empresas que no tienen acumulación de inventario, pueden ser empresas en las que el servicio se genera luego de haber sido comprado (por ejemplo, empresas contratistas).
 
-[rotacion inventario]( https://repositorio.ucv.edu.pe/bitstream/handle/20.500.12692/30149/Campos_ASM.pdf?sequence=4&isAllowed=y)
+[@CamposArellano2018]
 
 ### Promedio ciclo de negocio y ciclo financiero 
 
-En estos ciclos se busca identificar el tiempo que tardará la empresa en recuperar la inversión de su materia prima, así, un ciclo de negocio bueno tendrá valores menores en términos de tiempo en comparación a un ciclo de negocio malo.
+En estos ciclos se busca identificar el tiempo que tardará la empresa en recuperar la inversión de su materia prima, así, un ciclo de negocio bueno tendrá valores menores en términos de tiempo en comparación a un ciclo de negocio malo [@Montagud; @EFXTO].
 
 EL grupo número 3 de nuevo muestra tener mejor ciclo de negocio y financiero lo cual concuerda con su rotación de inventario este grupo de empresas sugiere una estructura fuerte en su ciclo productivo tanto en ventas como en ganancias.
-
- 
-tomado de [ciclo financiero]( https://psicologiaymente.com/organizaciones/ciclo-financiero-empresa)
-tomado de [ciclo de negocio ](https://efxto.com/diccionario/ciclo-de-negocio)
 
 ```{r,echo = FALSE}
 grafica_grupos_cat_6(5,mean,"Promedio variables de 6 categorias ")
@@ -515,7 +516,7 @@ grafica_grupos_cat_pagos_J_N(5,sum,"Total de los pagos a personas juridicas y na
 ```
 
 
-# Por ultimo… ¿Quiénes son estos grupos?
+## Por ultimo… ¿Quiénes son estos grupos?
 
 Con el fin de generar una clasificación agradable y no jerárquica a los grupos encontrados, y permitir al usuario de los grupos generar estrategias de mercado, damos nombre a los diferentes grupos de tal forma que cada empresa en el grupo se sienta cómoda con su clasificación evitando comparaciones de nivel entre los grupos.
 
@@ -535,8 +536,6 @@ Clásicos
 
 Nombrados así por ser representados por el 57% de los datos, son clientes que generan poco movimiento en los canales de entrada y salida, reciben sus ingresos de personas naturales, con servicios de personas jurídicas, su rotación de inventarios y cuentas por pagar y cobrar se mantiene estable en niveles indicados. Los clientes de este grupo deben generar gran interés en la compañía por ser la mayoría de sus clientes. Una estrategia publicitaria a este grupo puede llevar a fidelizar a estos clientes y llevarlos aumentar el movimiento a través de los distintos canales.
 
-[clasicos.csv](https://drive.google.com/file/d/1c6SlZtK9JjfaeFNwoXakN27IsXXOWizQ/view?usp=sharing)
-
 <center>
 ![](viejo_amigo.png){width='100px'}
 </center> 
@@ -549,8 +548,6 @@ Viejos aliados
 
 Generando en promedio tanto anual como mensual la mayoría de los movimientos por los distintos canales, y superando en promedio en las categorías de inventario, cxp, cxc, y rotaciones, este es un grupo por el cual la compañía debe hacer lo posible por mantener a los clientes de este grupo. Parecen ser compañías grandes las cuales manejan altos volúmenes de inventario, realizan tanto ventas físicas como electrónicas, además, los pagos a personas jurídicas como naturales en promedio es más pequeño que en los demás grupos.
 
-[Viejos_aliados.csv](https://drive.google.com/file/d/1bp-8_h20nx_AFCRRB1KPgvyUXqTm-nIE/view?usp=sharing)
-
 <center>
 ![](vieja_escuela.png){width='100px'}
 </center> 
@@ -562,8 +559,6 @@ Productores de la vieja escuela
 </center>
 
 Es un grupo donde la rotación de inventarios predomina sobre los demás grupos, pueden ser clientes acostumbrados a producción continua, tienen un ciclo de negocio y financiero mayor a los demás grupos, son clientes confiables por su estabilidad en la recuperación de las inversiones en materia prima, aunque en promedio no generan ventas de forma electrónica como los otros grupos, razón por la cual fueron llamados “Productores de la vieja guardia”
-
-[Productores_vieja_escuela.csv](https://drive.google.com/file/d/1C1LvPsCcVW82FXGcdx7ls6zoSCsiQDjc/view?usp=sharing)
 
 
 <center>
@@ -579,8 +574,6 @@ Aventureros
 
 Es el segundo grupo mas grande con 502 empresas cliente, y también es el segundo que mas realiza importaciones y exportaciones su nombre de aventureros es debido a su característica de interacción con otros países, es el tercer grupo que mas interacción genera en los canales de entrada y salida, curiosamente es uno de los que menor promedio de ventas electrónicas y menor promedio de inventario total.
 
-[Aventureros.csv](https://drive.google.com/file/d/14LzQI5lkn-W2IzQIhSEyccvJivGtCXPT/view?usp=sharing)
-
 <center>
 ![](trotamundos.png){width='100px'}
 </center> 
@@ -592,11 +585,6 @@ Trotamundos
 </center> 
 
 Después del grupo “Viejos aliados” es el segundo grupo que más movimiento genera a través de los canales de entrada y salida, es el grupo que más exportaciones e importaciones realiza en promedio en comparación con los demás grupos, sobresale por su inventario robusto y su manejo de ventas electrónicas.
-
-[Trotamundos.csv](https://drive.google.com/file/d/1nHq2EAQDP_lPRf_1P6b5jW05vw1sppBT/view?usp=sharing)
-
-
-[iconos png ](https://www.freepik.com) y [iconos png](https://www.flaticon.es)
 
 ```{r, echo=FALSE}
 etiqueta_grupo<- cutree(cluster_jerar,k=5)

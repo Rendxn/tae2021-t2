@@ -1,13 +1,10 @@
 ---
 title: "kmeans"
+author: "Santiago Rendón"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, message = FALSE, tidy = TRUE)
-```
-
-## Introducción
+# Agrupamiento con K-Means
 
 K-Means es un método de aprendizaje no supervisado usado para encontrar grupos
 en las observaciones (clusters o grupos). Usaremos un dataset que contiene los
@@ -74,8 +71,6 @@ aporte proporcionalmente a la distancia final.
 ```{r scale}
 nit_list <- df_full$nit
 df <- select(df_full, -nit) %>% scale %>% as.data.frame
-# TODO: rownames(df) <- nit_list
-# Pero aparentemente hay NITs repetidos e.g. C-183565186626737291
 ```
 
 ## Análisis de Componentes Principales
@@ -89,9 +84,6 @@ muestras.
 ```{r customers-pca}
 df.pca <- princomp(df, cor = TRUE)
 summary(df.pca)
-# TODO: Deberíamos usar solo los componentes que tenga una varianza de 1% +?
-# TODO: Organizar estilos de tablas.
-# i.e. PC1:PC25
 ```
 
 En nuestro caso, para obtener al menos una representación de la varianza de
@@ -189,7 +181,6 @@ características.
 Para las variables $en\_vm\_canal\_X$: Valor del ticket promedio de entrada por
 canal.
 ```{r clustering-graphs-en-vm}
-# TODO: Tal vez graficar entradas vs salidas
 ggpairs(cbind(df, Cluster=as.factor(customers_k3$cluster)),
         columns=1:11, aes(colour=Cluster, alpha=0.5),
         lower=list(continuous="points"),

@@ -1,9 +1,12 @@
 ---
 title: "Informe sobre Segmentacion de Clientes Corporativos para una Fintech"
-output: rmdformats::readthedown  
+author: "Santiago Rojas"
+output: html_document
 ---
 
-```{r message=FALSE, warning=FALSE, echo = FALSE}
+# Análisis Descriptivo
+
+```{r, message=FALSE, warning=FALSE, echo = FALSE}
 library(dplyr)
 library(knitr)
 library(ggplot2)
@@ -14,10 +17,10 @@ library(corrplot)
 
 **Objetivo**: Segmentar y agrupar clientes corporativos con la finalidad de poder encontrar patrones o relaciones de comportamiento y su estado financiero.
 
-## Base de Datos:
+## Base de Datos
 
 ```{r import-data, warning=FALSE, cache=FALSE, echo = FALSE}
-data <- read.csv("base_trabajo_segmentacion.csv", header = TRUE, sep = ";")
+data <- read.csv("../data/base_trabajo_segmentacion.csv", header = TRUE, sep = ";")
 
 
 data_c_col = c("impo_cv", "expo_vt", "cxp", "cxc", "totalinventory", "tiene_ventas_fisicas", "tiene_ventas_electronicas", "rotacion_inventarios",  "rotacion_cxc", "rotacion_cxp", "ciclo_negocio", "ciclo_financiero")
@@ -32,10 +35,10 @@ data_c <- data[,c(32:47)]
 
 La bases de datos cuenta con 2233 observaciones y 47 caracteristicas de interes.
 
-```{r echo = FALSE}
+```{r, echo = FALSE}
 kable(t(dim(data)), col.names = c("Observaciones", "Variables"))
 ```
-### __*Con dos tipos de variables de interes:*__
+### __*Con dos tipos de variables de interes*__
 
 **-Variables de comportamiento de los clientes en los diferentes canales y producto de la empresa.**
 
@@ -96,7 +99,7 @@ kable(t(dim(data)), col.names = c("Observaciones", "Variables"))
     ciclo_financiero: [ciclo financiero en días] categorizada con seis niveles
 
 
-```{r echo = FALSE}
+```{r, echo = FALSE}
 kable(head(data))
 ```
 - La variable **Nit** determina cada cliente empresarial.
@@ -115,13 +118,13 @@ Este analisis preliminar busca tratar de esclarecer y comprender la muestra de d
 
 ## Resumen Numerico para las variables de comportamiento
 
-```{r echo=FALSE}
+```{r, echo=FALSE}
 kable(summary(data_n[c(1:30)]/1000000))
 ```
 
 El resumen numerico se encuntra en **millones $** pesos **Colombianos**. 
 
-```{r echo=FALSE}
+```{r, echo=FALSE}
 ggplot(data_c,aes(x=tiene_ventas_electronicas))+
   geom_bar(color="black",fill="red", alpha=0.2)+
   labs(title = "Diagrama de Barras Ventas Electronicas")+
@@ -130,7 +133,7 @@ ggplot(data_c,aes(x=tiene_ventas_electronicas))+
 
 - La mayoria de empresas **no** tienen ventas **electronicas**. 
 
-```{r echo=FALSE}
+```{r, echo=FALSE}
 ggplot(data_c,aes(x=tiene_ventas_fisicas))+
   geom_bar(color="black",fill="red", alpha=0.2)+
   labs(title = "Diagrama de Barras Ventas Fisicas")+
@@ -139,7 +142,7 @@ ggplot(data_c,aes(x=tiene_ventas_fisicas))+
 
 - Aproximadamente el **53%** de las emprseas no tiene ventas **fisicas** y el **47%** restante si las tienen.
 
-```{r echo=FALSE}
+```{r, echo=FALSE}
 ggplot(data_c,aes(x=impo_cv))+
   geom_bar(color="black",fill="red", alpha=0.2)+
   labs(title = "Diagrama de Barras Importaciones")+
@@ -148,7 +151,7 @@ ggplot(data_c,aes(x=impo_cv))+
 
 - La mayoria de empresas tienen importaciones del **tipo 1** y el **tipo 2**.
 
-```{r echo=FALSE}
+```{r, echo=FALSE}
 ggplot(data_c,aes(x=expo_vt))+
   geom_bar(color="black",fill="red", alpha=0.2)+
   labs(title = "Diagrama de Barras Exportaciones")+
@@ -157,7 +160,7 @@ ggplot(data_c,aes(x=expo_vt))+
 
 - La mayoria de empresas tienen exportaciones del **tipo2**.
 
-```{r echo=FALSE}
+```{r, echo=FALSE}
 ggplot(data_c,aes(x=cxp))+
   geom_bar(color="black",fill="red", alpha=0.2)+
   labs(title = "Diagrama de Barras Cuentas por pagar")+
@@ -166,7 +169,7 @@ ggplot(data_c,aes(x=cxp))+
 
 - La mayoria de empresas tienen cuentas por pagar del **tipo 2**.
 
-```{r echo=FALSE}
+```{r, echo=FALSE}
 ggplot(data_c,aes(x=ciclo_negocio))+
   geom_bar(color="black",fill="red", alpha=0.2)+
   labs(title = "Diagrama de Barras Ciclo de negocio en dias")+
@@ -175,7 +178,7 @@ ggplot(data_c,aes(x=ciclo_negocio))+
 
 - La mayoria de empresas tienen ciclos de negocios del **tipo 4, 5 y 6**.
 
-```{r echo=FALSE}
+```{r, echo=FALSE}
 ggplot(data_c,aes(x=ciclo_financiero))+
   geom_bar(color="black",fill="red", alpha=0.2)+
   labs(title = "Diagrama de Barras Ciclo financiero en dias")+
@@ -189,7 +192,7 @@ ggplot(data_c,aes(x=ciclo_financiero))+
 
 De las variables de comportamientos tomamos las variables de **entrada** y **salida** con la finalidad de entender como es el uso de los clientes por dichos canales. 
 
-```{r echo=FALSE}
+```{r, echo=FALSE}
 entrada_canales <- data_n[, c(1:22)]/1000000
 salida_canales <- data_n[,c(23:30)]/1000000
 
@@ -198,8 +201,8 @@ col_names_en_cana <- c("en_vm_canal1", "en_vm_canal2", "en_vm_canal3", "en_vm_ca
 
 
 
-# Quantiles de las variables entradas por los canales
-```{r echo=FALSE}
+## Quantiles de las variables entradas por los canales
+```{r, echo=FALSE}
 kable(t(apply(entrada_canales, 2,quantile)))
 ```
 
@@ -209,10 +212,10 @@ kable(t(apply(entrada_canales, 2,quantile)))
 - El canal con mayor numero transacciones mensuales promedio  es **en_tx_canal1**.
 - El segundo canal con mayor numero de transacciones mensuales promedio es **en_tx_canal2**.
 
-# Quantiles de las variables salida por los canales
+## Quantiles de las variables salida por los canales
 
 
-```{r echo=FALSE}
+```{r, echo=FALSE}
 kable(t(apply(salida_canales, 2, quantile)))
 ```
 
@@ -221,8 +224,12 @@ kable(t(apply(salida_canales, 2, quantile)))
 
 ## Correlacion
 
-# Diagrama de correlacion para las variables de entrada.
-```{r echo=FALSE include=FALSE}
+<center>
+![](Correlacion.PNG){width='100px'}
+</center>
+
+### Diagrama de correlacion para las variables de entrada.
+```{r, echo=FALSE, include=FALSE}
 
 corrplot(cor(data_n), 
          method="color",  
@@ -242,9 +249,9 @@ corrplot(cor(data_n),
 - La variable en_tx_canal5 y sal_tx_canal5 estan altamente correlacionadas.
 - En general se encuentran diversas variables con relaciones de interes. 
 
-# Diagrama de correlacion para las variables de salida 
+### Diagrama de correlacion para las variables de salida 
 
-```{r echo=FALSE}
+```{r, echo=FALSE}
 
 corrplot(cor(data_c), 
          method="color",  
@@ -265,7 +272,7 @@ corrplot(cor(data_c),
 
 ### Box plot de los canales de entrada.
 
-```{r echo=FALSE}
+```{r, echo=FALSE}
 boxplot(log(entrada_canales+1), las=2, col="red")
 ```
 
@@ -277,7 +284,7 @@ boxplot(log(entrada_canales+1), las=2, col="red")
 
 ### Box plot de los canales de salida
 
-```{r echo=FALSE}
+```{r, echo=FALSE}
 boxplot(log(salida_canales+1), las=2, col="red")
 
 ```

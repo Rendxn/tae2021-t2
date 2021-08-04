@@ -1,14 +1,16 @@
 ---
-title: "Preprocesamiento"
-author: "Sebastian"
+title: "Segmentación de Clientes | TAE 2021-1"
+author: "Sebastian Rendón"
 date: "1/8/2021"
-output: html_document
+output: rmdformats::downcute
+bibliography: bibliography.bib
+nocite: | 
+  @freepik
+csl: ieee.csl
 ---
 
-# Segmentación de clientes | TAE 2021-1
-
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, tidy = TRUE)
 ```
 
 ```{r}
@@ -17,11 +19,5 @@ library(kableExtra)
 library(ggplot2)
 ```
 
-```{r, child=c('analisisDescriptivo.Rmd')}
-```
-
-```{r, child=c('kmeans.Rmd')}
-```
-
-```{r, child=c('jerarquico.Rmd')}
+```{r, child=c('analisis_descriptivo.Rmd', 'kmeans.Rmd', 'jerarquico.Rmd')}
 ```
