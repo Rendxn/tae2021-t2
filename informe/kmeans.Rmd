@@ -1,0 +1,281 @@
+---
+title: "kmeans"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, tidy = TRUE)
+```
+
+## Introducción
+
+K-Means es un método de aprendizaje no supervisado usado para encontrar grupos
+en las observaciones (clusters o grupos). Usaremos un dataset que contiene los
+clientes de una empresa, donde los clientes también son empresas.
+
+## Cargando los Datos
+
+Importamos algunas librerías necesarias para el agrupamiento y cargamos los
+datos.
+
+
+```{r lib-import, results=FALSE, message=FALSE, warning=FALSE}
+# Carga de librerías
+library(tidyverse)
+library(corrplot)
+library(plotly)
+library(gridExtra)
+library(GGally)
+library(knitr)
+library(NbClust)
+library(cluster)
+library(factoextra)
+library(LICORS)
+library(kableExtra)
+```
+
+```{r data-loading, results=FALSE, message=FALSE}
+# Set random seed
+set.seed(20210803)
+
+# Carga de datos
+df_full <- read.csv("../data/base_trabajo_segmentacion.csv", header = TRUE, sep = ";")
+```
+
+## Exploración de datos
+
+```{r}
+head(df_full)
+```
+
+Se realiza un histograma de frecuencias para cada una de las variables 
+$en\_vm\_canalX$, que representan el valor del ticket promedio de entrada por el
+canal X.
+
+```{r}
+# Histograma para cada en_vm
+df_full %>%
+  gather(caracteristica, valor, 2:12) %>%
+  ggplot(aes(x=valor, fill=caracteristica)) +
+  geom_histogram(colour="black", show.legend=FALSE, bins=10) +
+  facet_wrap(~caracteristica, scales="free_x") +
+  labs(x="Valor", y="Frequencia",
+       title="Caracteristicas de cliente - Histogramas") +
+  theme_bw()
+```
+
+## Escalado de datos
+
+Se separa el NIT del resto del conjunto de datos y se hace un escalado de las
+variables características como método de normalización, pues el método K-Means
+es sensible a las distancias de cada variable y se quiere que cada variable
+aporte proporcionalmente a la distancia final.
+
+```{r scale}
+nit_list <- df_full$nit
+df <- select(df_full, -nit) %>% scale %>% as.data.frame
+# TODO: rownames(df) <- nit_list
+# Pero aparentemente hay NITs repetidos e.g. C-183565186626737291
+```
+
+## Análisis de Componentes Principales
+
+El análisis de componentes principales (PCA en inglés), permite identificar
+cuáles componentes o variables son las que más afectan la variancia de los
+datos. Por lo que si conocemos los componentes con mayor influencia en la
+variancia, podemos estimar la "posición" de una muestra comparada con otras
+muestras.
+
+```{r customers-pca}
+df.pca <- princomp(df, cor = TRUE)
+summary(df.pca)
+# TODO: Deberíamos usar solo los componentes que tenga una varianza de 1% +?
+# TODO: Organizar estilos de tablas.
+# i.e. PC1:PC25
+```
+
+En nuestro caso, para obtener al menos una representación de la varianza de
+80%, tenemos que usar al menos 17 componentes principales.
+
+Aunque multiples componentes influyan en menos de 1% de la varianza, usaremos
+los datos completos, ya que no hay componentes que influyan contundentemente en
+la varianza y el costo computacional con 46 variables es aceptable.
+
+## ¿Cuántos Grupos?
+
+Veamos gráficamente cuál es el número de grupos óptimo, usando la prueba del
+codo.
+
+```{r elbow-test, message=FALSE}
+# Elbow-test con diferentes métricas.
+fviz_nbclust(df, kmeans, method = "wss")
+fviz_nbclust(df, kmeans, method = "silhouette")
+fviz_nbclust(df, kmeans, method = "gap_stat")
+```
+
+Con estos tres métodos obtenemos resultados distintos, pero se puede ver una
+preferencia por 2 y 3 grupos Aun así, usaremos una función del paquete `NbClust`
+que permite calcular más métricas simultanéamente para encontrar el número de
+grupos adecuado.
+
+```{r num-clust, cache=TRUE, message=FALSE}
+# Elbow test con aun más métricas.
+num_clust <-  NbClust(df, distance="euclidean", method = "kmeans", min.nc = 2, max.nc = 10, index = "all")
+```
+
+Los índices indican entre 2 y 3 grupos, pero ligeramente favoreciendo el uso de
+**3 grupos**:
+
+```{r num-clust-graph, message=FALSE}
+# Histograma de frecuencias de número de clusters sugerido por cada métrica
+fviz_nbclust(num_clust)
+```
+
+
+## Ejecución de K-Means
+
+Se realiza el agrupamiento utilizando el método K-Means, con $K = 3$ y 50
+configuraciones iniciales aleatorias (50 posiciones iniciales aleatorias para
+los centroides).
+
+```{r k3-means-exec}
+# K-Means con 3 centros y 50 configuraciones iniciales aleatorias.
+# Al final, usa la mejor configuración.
+customers_k3 <- kmeans(df, centers = 3, nstart = 50)
+```
+
+El resultado de los clústers
+
+```{r k-means-sizes}
+# Tamaños de los clusters
+kable(customers_k3$size, col.names = c('Tamaño'), row.names = TRUE) %>% kable_paper()
+```
+Se observa que uno de los tres grupos posee significativamente menos
+observaciones que los otros dos. Esta disparidad en el tamaño de los
+grupos puede indicar que un grupo de clientes posee unas características muy
+poco comunes.
+
+
+En la siguiente tabla se puede ver el valor promedio de cada una de las
+variables de entrada, agrupadas por clúster.
+
+```{r distributions}
+# Usaremos `customers_k3`, por la distribución de los clusters.
+labeled_grouped_df <- aggregate(df, by=list(customers_k3$cluster), mean)
+kable(labeled_grouped_df) %>% kable_paper()
+```
+
+Se puede observar que:
+
+- El grupo 1 posee el valor de ticket de entrada más alto para casi todos los canales.
+- El grupo 1 también posee la cantidad de transacciones de entrada por canal más alta en casi todos los canales.
+- Los grupos 2 y 3 poseen características relativamente similares.
+- El valor de ticket promedio de entrada en todos los canales, en el grupo 2, es cercano a cero, pero positivo.
+- El valor de ticket promedio de entrada en todos los canales, en el grupo 3, es cercano a cero, pero negativo.
+
+Por lo tanto, se podrían nombrar los clusters de la siguiente manera:
+
+1. Clientes principales: muchas transacciones, valores de tickets alto.
+2. Clientes pequeños con ganancias: pocas transacciones, valores de tickets
+bajo.
+3. Clientes pequeños con pérdidas: pocas transacciones, valores de tickets
+negativos.
+
+## Visualización de Distribución de Variables
+
+Veamos esta distribución gráficamente para las diferentes variables 
+características.
+
+Para las variables $en\_vm\_canal\_X$: Valor del ticket promedio de entrada por
+canal.
+```{r clustering-graphs-en-vm}
+# TODO: Tal vez graficar entradas vs salidas
+ggpairs(cbind(df, Cluster=as.factor(customers_k3$cluster)),
+        columns=1:11, aes(colour=Cluster, alpha=0.5),
+        lower=list(continuous="points"),
+        upper=list(continuous="blank"),
+        axisLabels="none", switch="both") +
+        theme_bw()
+```
+Podemos ver como el grupo 1 (en rojo), posee los valores más anómalos,
+mientras que los grupos 2 y 3 (en verde y azul respectivamente), son bastante
+similares entre sí.
+
+
+Para las variables $en\_tx\_canal\_X$: Cantidad de transacciones de entrada
+promedio por canal.
+```{r clustering-graphs-en-tx}
+ggpairs(cbind(df, Cluster=as.factor(customers_k3$cluster)),
+        columns=12:22, aes(colour=Cluster, alpha=0.5),
+        lower=list(continuous="points"),
+        upper=list(continuous="blank"),
+        axisLabels="none", switch="both") +
+        theme_bw()
+```
+Para las variables $sal\_vm\_canal\_X$: Valor del ticket promedio de salida por
+canal.
+```{r clustering-graphs-sal-vm}
+ggpairs(cbind(df, Cluster=as.factor(customers_k3$cluster)),
+        columns=23:26, aes(colour=Cluster, alpha=0.5),
+        lower=list(continuous="points"),
+        upper=list(continuous="blank"),
+        axisLabels="none", switch="both") +
+        theme_bw()
+```
+Finalmente, para las variables $sal\_tx\_canal\_X$: Cantidad de transacciones de
+salida promedio por canal.
+```{r clustering-graphs-sal-tx}
+ggpairs(cbind(df, Cluster=as.factor(customers_k3$cluster)),
+        columns=27:30, aes(colour=Cluster, alpha=0.5),
+        lower=list(continuous="points"),
+        upper=list(continuous="blank"),
+        axisLabels="none", switch="both") +
+        theme_bw()
+```
+
+## Clúster en la Base de Datos
+
+Para poder eventualmente manipular los datos y aplicar otras técnicas teniendo
+en cuenta el grupo, añadimos el grupo al que pertenece en una nueva columna.
+
+```{r}
+labeled_df <- df_full %>% mutate(Cluster = as.factor(customers_k3$cluster), .after = nit)
+labeled_pca <-data.frame(df.pca$scores, cluster = as.factor(customers_k3$cluster), cluster_name = paste("Cluster", as.factor(customers_k3$cluster)))
+```
+
+## Visualización de Clusters
+
+Se utilizarán los componente principales con mayor proporción de la varianza
+para visualizar los clusters según las variables más importantes en el modelo.
+
+### Visualización en el plano
+
+```{r fviz-cluster}
+fviz_cluster(customers_k3, data = df)
+```
+
+### Visualización 3D
+
+```{r}
+fig <- plot_ly(labeled_pca, x = ~Comp.1, y = ~Comp.2, z = ~Comp.3, 
+               text = rownames(labeled_pca), color = ~cluster_name) %>% 
+                add_markers(size=1.5)
+fig <- layout(fig, title="PCA Clusters de K-Means con K=3")
+fig
+```
+
+## Observaciones
+
+1. En general, los clientes del conjunto de datos poseen características muy
+similares, esto se puede ver al realizar la segmentación, los grupos 2 y 3
+poseen valores muy similares.
+
+2. El cluster 1 representa a los clientes principales, que representan la mayor
+fuente de ingreso para la empresa, pues son los clientes con los valores de
+ticket más alto y con mayor número de transacciones mensuales. Este grupo
+tiene un tamaño muy reducido en comparación con los grupos 2 y 3.
+
+3. Debido a la homogeneidad de los grupos 2 y 3, y a los resultados de las
+pruebas de elección del K óptimo, se puede considerar la segmentación con K = 2
+(se prevee que la mayoría de los clientes de los grupos 2 y 3 se unan y el grupo
+1 permanezca con cambios mínimos).
