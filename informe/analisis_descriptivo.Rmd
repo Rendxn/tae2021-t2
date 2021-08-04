@@ -1,0 +1,290 @@
+---
+title: "Informe sobre Segmentacion de Clientes Corporativos para una Fintech"
+output: rmdformats::readthedown  
+---
+
+```{r message=FALSE, warning=FALSE, echo = FALSE}
+library(dplyr)
+library(knitr)
+library(ggplot2)
+library(scales)
+library(corrplot)
+```
+
+
+**Objetivo**: Segmentar y agrupar clientes corporativos con la finalidad de poder encontrar patrones o relaciones de comportamiento y su estado financiero.
+
+## Base de Datos:
+
+```{r import-data, warning=FALSE, cache=FALSE, echo = FALSE}
+data <- read.csv("base_trabajo_segmentacion.csv", header = TRUE, sep = ";")
+
+
+data_c_col = c("impo_cv", "expo_vt", "cxp", "cxc", "totalinventory", "tiene_ventas_fisicas", "tiene_ventas_electronicas", "rotacion_inventarios",  "rotacion_cxc", "rotacion_cxp", "ciclo_negocio", "ciclo_financiero")
+
+#data_n <- data %>% select(!any_of(data_c_col))
+#data_c <- data %>% select(data_c_col)
+
+data_n <- data[,c(2:31)]
+data_c <- data[,c(32:47)]
+```
+
+
+La bases de datos cuenta con 2233 observaciones y 47 caracteristicas de interes.
+
+```{r echo = FALSE}
+kable(t(dim(data)), col.names = c("Observaciones", "Variables"))
+```
+### __*Con dos tipos de variables de interes:*__
+
+**-Variables de comportamiento de los clientes en los diferentes canales y producto de la empresa.**
+
+    en: entrada                                                    
+    vm: valor medio anual                                          
+    tx: transacciones mensuales promedio                           
+    sal: salida                                                    
+  
+  **Ejemplos:**
+  
+  en_vm_canalX: valor del ticket promedio de entrada por el canal X
+  
+  sal_vm_canalX: valor del ticket promedio de salida por el canal X
+  
+  en_tx_canalX: cantidad de transacciones mensuales en promedio por el canal X
+  
+  
+  
+  en_vm_canal1
+  
+  en_vm_otros
+  
+  
+  en_tx_canal1
+  
+  en_tx_otros
+  
+  
+  sal_vm_canal5
+  
+  sal_vm_otros
+  
+  
+  
+  sal_tx_canal5
+  
+  sal_tx_otros
+
+
+
+**-Variables de estados financieros de los clientes.**
+
+    impo_cv: [importaciones]/[compras] categorizadas
+    expo_vt: [exportaciones]/[ventas] categorizadas
+    cxp: [cuentas por pagar] categorizada con seis niveles
+    cxc: [cuentas por cobrar] categorizada con seis niveles
+    totalinventory: [valor de inventarios] categorizada con seis niveles
+    pagos_pj: [pagos hechos a personas jurídicas]/[pagos totales]
+    pagos_pn: [pagos hechos a personas naturales]/[pagos totales]
+    tiene_ventas_fisicas: la empresa tiene puntos de venta físicos (1:Si, 0:No)
+    tiene_ventas_electronicas: la empresa tiene ventas electrónicas (1:Si, 0:No)
+    recaudos_pj: [recaudos provenientes de personas jurídicas]/[recaudos totales]
+    recaudos_pn: [recaudos provenientes de personas naturales]/[recaudos totales]
+    rotacion_inventarios: [rotación de inventarios en días] categorizada con seis niveles
+    rotacion_cxc: [rotación de cuentas por pagar en días] categorizada con seis niveles
+    rotacion_cxp: [rotación de cuentas por cobrar en días] categorizada con seis niveles
+    ciclo_negocio: [ciclo de negocio en días] categorizada con seis niveles
+    ciclo_financiero: [ciclo financiero en días] categorizada con seis niveles
+
+
+```{r echo = FALSE}
+kable(head(data))
+```
+- La variable **Nit** determina cada cliente empresarial.
+
+- Existen **2233 observaciones** de los clientes empresariales.
+
+- Se observan datos de diferentes escala.
+
+
+
+
+## Analisis Descriptivo Datos
+
+Este analisis preliminar busca tratar de esclarecer y comprender la muestra de datos.
+
+
+## Resumen Numerico para las variables de comportamiento
+
+```{r echo=FALSE}
+kable(summary(data_n[c(1:30)]/1000000))
+```
+
+El resumen numerico se encuntra en **millones $** pesos **Colombianos**. 
+
+```{r echo=FALSE}
+ggplot(data_c,aes(x=tiene_ventas_electronicas))+
+  geom_bar(color="black",fill="red", alpha=0.2)+
+  labs(title = "Diagrama de Barras Ventas Electronicas")+
+  ylab("Cantidad de empresas")
+```
+
+- La mayoria de empresas **no** tienen ventas **electronicas**. 
+
+```{r echo=FALSE}
+ggplot(data_c,aes(x=tiene_ventas_fisicas))+
+  geom_bar(color="black",fill="red", alpha=0.2)+
+  labs(title = "Diagrama de Barras Ventas Fisicas")+
+  ylab("Cantidad de empresas")
+```
+
+- Aproximadamente el **53%** de las emprseas no tiene ventas **fisicas** y el **47%** restante si las tienen.
+
+```{r echo=FALSE}
+ggplot(data_c,aes(x=impo_cv))+
+  geom_bar(color="black",fill="red", alpha=0.2)+
+  labs(title = "Diagrama de Barras Importaciones")+
+  ylab("Compras")
+```
+
+- La mayoria de empresas tienen importaciones del **tipo 1** y el **tipo 2**.
+
+```{r echo=FALSE}
+ggplot(data_c,aes(x=expo_vt))+
+  geom_bar(color="black",fill="red", alpha=0.2)+
+  labs(title = "Diagrama de Barras Exportaciones")+
+  ylab("Ventas")
+```
+
+- La mayoria de empresas tienen exportaciones del **tipo2**.
+
+```{r echo=FALSE}
+ggplot(data_c,aes(x=cxp))+
+  geom_bar(color="black",fill="red", alpha=0.2)+
+  labs(title = "Diagrama de Barras Cuentas por pagar")+
+  ylab("Frecuencia")
+```
+
+- La mayoria de empresas tienen cuentas por pagar del **tipo 2**.
+
+```{r echo=FALSE}
+ggplot(data_c,aes(x=ciclo_negocio))+
+  geom_bar(color="black",fill="red", alpha=0.2)+
+  labs(title = "Diagrama de Barras Ciclo de negocio en dias")+
+  ylab("Frecuencia")
+```
+
+- La mayoria de empresas tienen ciclos de negocios del **tipo 4, 5 y 6**.
+
+```{r echo=FALSE}
+ggplot(data_c,aes(x=ciclo_financiero))+
+  geom_bar(color="black",fill="red", alpha=0.2)+
+  labs(title = "Diagrama de Barras Ciclo financiero en dias")+
+  ylab("Frecuencia")
+```
+
+- La mayoria de empresas tienen ciclos financieros en dias del **tipo 6**.
+
+
+
+
+De las variables de comportamientos tomamos las variables de **entrada** y **salida** con la finalidad de entender como es el uso de los clientes por dichos canales. 
+
+```{r echo=FALSE}
+entrada_canales <- data_n[, c(1:22)]/1000000
+salida_canales <- data_n[,c(23:30)]/1000000
+
+col_names_en_cana <- c("en_vm_canal1", "en_vm_canal2", "en_vm_canal3", "en_vm_canal4", "en_vm_canal5", "en_vm_canal6", "en_vm_canal7", "en_vm_canal8", "en_vm_canal9", "en_vm_canal10", "en_vm_otros", "en_tx_canal1", "en_tx_canal2", "en_tx_canal3", "en_tx_canal4", "en_tx_canal5", "en_tx_canal6", "en_tx_canal7", "en_tx_canal8", "en_tx_canal9", "en_tx_canal10", "en_tx_otros")
+```
+
+
+
+# Quantiles de las variables entradas por los canales
+```{r echo=FALSE}
+kable(t(apply(entrada_canales, 2,quantile)))
+```
+
+- El canal con mayor flujo de dinero medio anual es **en_vm_canal1**.
+- El segundo canal con mayor flujo de dinero medio anual es **en_vm_canal2**.
+
+- El canal con mayor numero transacciones mensuales promedio  es **en_tx_canal1**.
+- El segundo canal con mayor numero de transacciones mensuales promedio es **en_tx_canal2**.
+
+# Quantiles de las variables salida por los canales
+
+
+```{r echo=FALSE}
+kable(t(apply(salida_canales, 2, quantile)))
+```
+
+- El canal con mayor salida medio anual es **sal_vm_canal2**
+
+
+## Correlacion
+
+# Diagrama de correlacion para las variables de entrada.
+```{r echo=FALSE include=FALSE}
+
+corrplot(cor(data_n), 
+         method="color",  
+         type="upper", order='original', 
+         addCoef.col = "black", # Add coefficient of correlation
+         tl.col="black", tl.srt=45, #Text label color and rotation
+         sig.level = 0.01, insig = "blank", 
+         number.cex = 0.5,
+         # hide correlation coefficient on the principal diagonal
+         diag=FALSE
+         )
+
+``` 
+
+- La variable en_vm_canal5 y sal_vm_canal5 estan altamente correlacionadas.
+- La variable en_vm_canal4 y sal_vm_canal4 estan altamente correlacionadas.
+- La variable en_tx_canal5 y sal_tx_canal5 estan altamente correlacionadas.
+- En general se encuentran diversas variables con relaciones de interes. 
+
+# Diagrama de correlacion para las variables de salida 
+
+```{r echo=FALSE}
+
+corrplot(cor(data_c), 
+         method="color",  
+         type="upper", order='original', 
+         addCoef.col = "black", # Add coefficient of correlation
+         tl.col="black", tl.srt=45, #Text label color and rotation
+         sig.level = 0.01, insig = "blank", 
+         number.cex = 0.5,
+         # hide correlation coefficient on the principal diagonal
+         diag=FALSE
+         )
+```
+
+- Las variables de imp_cv y expo_vt estan altamente correlacionadas. 
+- Las variables de rotacion_inventarios y cilo_negocio estan altamente correlacionadas.
+- Las variables de ciclo_negocio y ciclo financiero estan altamente correlacionadas.
+- Las variables pagos_pj y pagos_pn estan inversamente correlacionadas.
+
+### Box plot de los canales de entrada.
+
+```{r echo=FALSE}
+boxplot(log(entrada_canales+1), las=2, col="red")
+```
+
+- Se puede visualizar una gran cantidad de datos a tipicos y una gran dispersion en todos los canales.
+- Los canales de entrada con mayor uso son los canal1 y canal2.
+- Los canales de entrada con menor uso son el canal10 y el canal7
+
+
+
+### Box plot de los canales de salida
+
+```{r echo=FALSE}
+boxplot(log(salida_canales+1), las=2, col="red")
+
+```
+
+- Los canales con mayor uso son canal5, canal2. 
+
+
+
+
+
