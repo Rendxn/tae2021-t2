@@ -170,18 +170,23 @@ kable(labeled_grouped_df) %>% kable_paper()
 Se puede observar que:
 
 - El grupo 1 posee el valor de ticket de entrada más alto para casi todos los canales.
+- El grupo 1 es el que tiene el valor de ventas electrónicas y físicas más alto y el grupo 2 el más bajo.
+- El grupo 1 es el que tiene el valor de cuentas por cobrar y cuentas por pagar más alto y el grupo 2 el más bajo.
+- El grupo 1 posee el ciclo financiero más bajo y el 2 el más alto.
 - El grupo 1 también posee la cantidad de transacciones de entrada por canal más alta en casi todos los canales.
-- Los grupos 2 y 3 poseen características relativamente similares.
+- Los grupos 2 y 3 poseen valores de variables de comportamiento en los diferentes canales relativamente similares.
+- Los grupos 2 y 3 se diferencian principalmente por sus estados financieros y otras características.
 - El valor de ticket promedio de entrada en todos los canales, en el grupo 2, es cercano a cero, pero positivo.
 - El valor de ticket promedio de entrada en todos los canales, en el grupo 3, es cercano a cero, pero negativo.
 
 Por lo tanto, se podrían nombrar los clusters de la siguiente manera:
 
-1. Clientes principales: muchas transacciones, valores de tickets alto.
+1. Clientes principales: muchas transacciones, valores de tickets alto, mayor
+cantidad de ventas físicas y electrónicas, mejor estado financiero.
 2. Clientes pequeños con ganancias: pocas transacciones, valores de tickets
-bajo.
+bajo, estado financiero moderado.
 3. Clientes pequeños con pérdidas: pocas transacciones, valores de tickets
-negativos.
+negativos, peor estado financiero.
 
 ## Visualización de Distribución de Variables
 
